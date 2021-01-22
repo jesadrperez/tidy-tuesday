@@ -1,0 +1,157 @@
+---
+title: "TidyTemplate"
+date: 2021-01-19
+output: html_output
+---
+
+# TidyTuesday
+
+Join the R4DS Online Learning Community in the weekly #TidyTuesday event!
+Every week we post a raw dataset, a chart or article related to that dataset, and ask you to explore the data.
+While the dataset will be “tamed”, it will not always be tidy! As such you might need to apply various R for Data Science techniques to wrangle the data into a true tidy format.
+The goal of TidyTuesday is to apply your R skills, get feedback, explore other’s work, and connect with the greater #RStats community!
+As such we encourage everyone of all skills to participate!
+
+```{r setup, include=FALSE}
+
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(tidytuesdayR)
+library(ggtext)
+library(glue)
+
+```
+
+# Load the weekly Data
+
+Dowload the weekly data and make available in the `tt` object.
+
+```{r Load}
+
+tt <- tt_load("2021-01-19")
+
+```
+
+
+# Readme
+
+Take a look at the readme for the weekly data to get insight on the dataset.
+This includes a data dictionary, source, and a link to an article on the data.
+
+```{r Readme, eval = interactive()}
+
+tt
+
+```
+
+
+# Glimpse Data
+
+Take an initial look at the format of the data available.
+
+```{r Glimpse}
+
+tt %>% 
+  map(glimpse)
+
+```
+
+# Wrangle
+
+Explore the data and process it into a nice format for plotting! Access each dataset by name by using a dollarsign after the `tt` object and then the name of the data set.
+
+```{r Wrangle}
+
+crop_farmland_df <- tt$crops %>% 
+  select(SubCounty, Farming, Avocado) %>%
+  drop_na(Avocado) %>%
+  rename(sub_county = SubCounty, pop_farming = Farming, pop_avocado = Avocado) %>%
+  mutate(
+    avocado_ratio = pop_avocado / pop_farming,
+    remaining_ratio = 0.5 - avocado_ratio,
+    sub_county = str_to_title(sub_county),
+    sub_county = fct_reorder(sub_county, avocado_ratio)
+  ) %>%
+  pivot_longer(
+    cols = c(avocado_ratio, remaining_ratio), names_to = "ratio_type",  
+    values_to = "ratio"
+  ) %>%
+  mutate(
+    ratio_type = factor(
+      ratio_type, 
+      levels = c("remaining_ratio", "avocado_ratio")
+    )
+  ) %>%
+  glimpse()
+
+```
+
+# Visualize
+
+Using your processed dataset, create your unique visualization.
+
+```{r Visualize}
+
+KENYA_RED <- "#922529"
+KENYA_GREEN <- "#008C51"
+
+ggplot(
+  filter(crop_farmland_df, sub_county != "Kenya") , 
+  aes(ratio, sub_county, fill = ratio_type)
+  ) +
+  geom_col(color = "white", size = 0.25, show.legend = FALSE) +
+  scale_x_continuous(
+    position = "top", expand = expansion(add = c(0, 0.01)),
+    labels = scales::label_percent(accuracy = 1)) +
+  scale_fill_manual(values = c("tan", KENYA_GREEN)) +
+  geom_vline(
+    xintercept = filter(
+      crop_farmland_df, sub_county == "Kenya", 
+      ratio_type == "avocado_ratio"
+    )$ratio, 
+    color = KENYA_RED
+  ) +
+  annotate(
+    "text", y = 35, x = 0.03 + filter(
+      crop_farmland_df, sub_county == "Kenya", ratio_type == "avocado_ratio"
+    )$ratio, label = "National Share", color = KENYA_RED
+  ) +
+  labs(
+    title = glue(
+      "<b style='color:{KENYA_GREEN}'>Avocados</b> ",
+      "From <b style='color:{KENYA_RED}'>Kenya</b>"
+      ),
+    subtitle = glue(
+      "Share of sub county's farming population growing ",
+      "<b style='color:{KENYA_GREEN}'>avocados</b>"
+      ),
+    x = NULL,
+    y = NULL,
+    caption = "Source: 2019 Kenya Population and Housing Census"
+  ) +
+  theme_minimal() +
+  #huitzilin::theme_snl(axis_line = "Y", grid_major = "None") +
+  theme(
+    plot.title = ggtext::element_markdown(), 
+    plot.subtitle = ggtext::element_markdown(),
+    plot.title.position = "plot",
+    plot.caption.position = "plot",
+    panel.grid = element_blank()
+  )
+  
+```
+
+# Save Image
+
+Save your image for sharing. Be sure to use the `#TidyTuesday` hashtag in your post on twitter! 
+
+```{r}
+
+# This will save your most recent plot
+ggsave(
+  width = 10.5, height = 7,
+  filename = "2021-04.png",
+  device = "png")
+
+```
