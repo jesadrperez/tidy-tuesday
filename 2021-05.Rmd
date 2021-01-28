@@ -1,0 +1,157 @@
+---
+title: "TidyTemplate"
+date: 2021-01-25
+output: html_output
+---
+
+# TidyTuesday
+
+Join the R4DS Online Learning Community in the weekly #TidyTuesday event!
+Every week we post a raw dataset, a chart or article related to that dataset, and ask you to explore the data.
+While the dataset will be “tamed”, it will not always be tidy! As such you might need to apply various R for Data Science techniques to wrangle the data into a true tidy format.
+The goal of TidyTuesday is to apply your R skills, get feedback, explore other’s work, and connect with the greater #RStats community!
+As such we encourage everyone of all skills to participate!
+
+```{r setup, include=FALSE}
+
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(tidytuesdayR)
+library(glue)
+library(ggtext)
+library(scales)
+
+```
+
+# Load the weekly Data
+
+Dowload the weekly data and make available in the `tt` object.
+
+```{r Load}
+
+tt <- tt_load("2021-01-26")
+
+```
+
+
+# Readme
+
+Take a look at the readme for the weekly data to get insight on the dataset.
+This includes a data dictionary, source, and a link to an article on the data.
+
+```{r Readme, eval = interactive()}
+
+tt
+
+```
+
+
+# Glimpse Data
+
+Take an initial look at the format of the data available.
+
+```{r Glimpse}
+
+tt %>% 
+  map(glimpse)
+
+```
+
+# Wrangle
+
+Explore the data and process it into a nice format for plotting! Access each dataset by name by using a dollarsign after the `tt` object and then the name of the data set.
+
+```{r Wrangle}
+
+plastic_types_df <- tt$plastics %>%
+  filter(parent_company != "Grand Total") %>%
+  select(hdpe, ldpe, o, pet, pp, ps, pvc) %>%
+  replace_na(
+    list(hdpe = 0, ldpe = 0, o = 0, pet = 0, pp = 0, ps = 0, pvc = 0)
+  ) %>%
+  pivot_longer(
+    cols = c(hdpe, ldpe, o, pet, pp, ps, pvc), names_to = "plastic_type", 
+    values_to = "count"
+  ) %>%
+  group_by(plastic_type) %>%
+  #filter(plastic_type != "o") %>%
+  summarise(n = sum(count)) %>%
+  mutate(
+    ratio = n / sum(n),
+    desc = case_when(
+      plastic_type == "hdpe" ~ "Plastic milk containers, plastic bags, bottle caps, trash cans, oil cans, plastic lumber, toolboxes, supplement containers",
+      plastic_type == "ldpe" ~ "Plastic bags, Ziploc bags, buckets, squeeze bottles, plastic tubes, chopping boards",
+      plastic_type == "o" ~ "Polycarbonate (PC), polyamide (PA), styrene acrylonitrile (SAN), acrylic plastics/polyacrylonitrile (PAN), bioplastics",
+      plastic_type == "pet" ~ "Polyester fibers, soft drink bottles, food containers",
+      plastic_type == "pp" ~ "Flower pots, bumpers, car interior trim, industrial fibers, carry-out beverage cups, microwavable food containers, DVD keep cases",
+      plastic_type == "ps" ~ "Toys, video cassettes, ashtrays, trunks, beverage/food coolers, beer cups, wine and champagne cups, carry-out food containers, Styrofoam",
+      plastic_type == "pvc" ~ "Window frames, bottles for chemicals, flooring, plumbing pipes"
+    ),
+    plastic_type = case_when(
+      plastic_type == "hdpe" ~ paste0("#02 ", toupper(plastic_type)), 
+      plastic_type == "ldpe" ~ paste0("#04 ", toupper(plastic_type)), 
+      plastic_type == "o" ~ paste0("#07 ", "Other"), 
+      plastic_type == "pet" ~ paste0("#01 ", toupper(plastic_type)), 
+      plastic_type == "pp" ~  paste0("#05 ", toupper(plastic_type)), 
+      plastic_type == "ps" ~  paste0("#06 ", toupper(plastic_type)), 
+      plastic_type == "pvc" ~ paste0("#03 ", toupper(plastic_type))
+    ),
+    plastic_type = fct_reorder(plastic_type, ratio),
+    desc = glue("<b>{plastic_type}:</b> {desc}"),
+    desc = fct_reorder(desc, ratio, .desc = TRUE)
+  ) %>%
+  glimpse()
+
+```
+
+
+# Visualize
+
+Using your processed dataset, create your unique visualization.
+
+```{r Visualize}
+
+ggplot(plastic_types_df, aes(n, plastic_type)) +
+  geom_col(fill = "#e06666") +
+  #geom_richtext(aes(label = n)) +
+  geom_text(
+    aes(label = scales::comma(n), x = if_else(n < 50000, n + 10000, n - 10000)),
+    family = "Open Sans", fontface = "bold", color = "#520000"
+  ) +
+  scale_x_continuous(expand = c(0,0), limits = c(0, 400000)) +
+  facet_wrap(~desc, scales = "free_y", nrow = 7, ncol = 1) +
+  labs(
+    title = "<b style='color:#520000'>#BreakFreeFromPlastics</b> Members Have Collected 771,542 Pieces of Plastic Waste!",
+    subtitle = "Number of plastic waste pieces collected by recycling code and some common items made with that type of plastic.",
+    x = NULL,
+    y = NULL,
+    caption = "Source: Break Free From Plastic’s Brand Audit Report (2019, 2020)"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    plot.title = element_markdown(family = "Open Sans", face = "bold", size = rel(1.5)),
+    plot.subtitle = element_markdown(size = rel(1.25)),
+    plot.background = element_rect(fill = "#fae6e6", color = "#fae6e6"),
+    panel.grid = element_blank(),
+    axis.text = element_blank(),
+    strip.text = element_markdown(size = rel(0.875), hjust = 0),
+    plot.caption = element_text(size = rel(0.875), hjust = 0)
+  )
+
+```
+
+# Save Image
+
+Save your image for sharing. Be sure to use the `#TidyTuesday` hashtag in your post on twitter! 
+
+```{r}
+
+# This will save your most recent plot
+ggsave(
+  width = 12,
+  height = 6.75,
+  filename = "My TidyTuesday Plot.png",
+  device = "png")
+
+```
