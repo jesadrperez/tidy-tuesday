@@ -1,0 +1,142 @@
+---
+title: "TidyTemplate"
+date: 2021-02-03
+output: html_output
+---
+
+# TidyTuesday
+
+Join the R4DS Online Learning Community in the weekly #TidyTuesday event!
+Every week we post a raw dataset, a chart or article related to that dataset, and ask you to explore the data.
+While the dataset will be “tamed”, it will not always be tidy! As such you might need to apply various R for Data Science techniques to wrangle the data into a true tidy format.
+The goal of TidyTuesday is to apply your R skills, get feedback, explore other’s work, and connect with the greater #RStats community!
+As such we encourage everyone of all skills to participate!
+
+```{r setup, include=FALSE}
+
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(tidytuesdayR)
+
+```
+
+# Load the weekly Data
+
+Dowload the weekly data and make available in the `tt` object.
+
+```{r Load}
+
+tt <- tt_load("2021-02-02")
+
+```
+
+
+# Readme
+
+Take a look at the readme for the weekly data to get insight on the dataset.
+This includes a data dictionary, source, and a link to an article on the data.
+
+```{r Readme, eval = interactive()}
+
+tt
+
+```
+
+
+# Glimpse Data
+
+Take an initial look at the format of the data available.
+
+```{r Glimpse}
+
+tt %>% 
+  map(glimpse)
+
+```
+
+# Wrangle
+
+Explore the data and process it into a nice format for plotting! Access each dataset by name by using a dollarsign after the `tt` object and then the name of the data set.
+
+```{r Wrangle}
+
+hbcu_total_enrollment <- tt$hbcu_all %>%
+  select(Year, `Total enrollment`) %>%
+  rename(year = Year, total_enrollment_all = `Total enrollment`)
+
+hbcu_black_rc <- tt$hbcu_black %>%
+  select(Year, Males, Females) %>%
+  rename(year = Year,  black_males = Males, black_females = Females) %>%
+  left_join(hbcu_total_enrollment, by = c('year' = 'year')) %>%
+  mutate(
+    total_relative_change = 
+      (total_enrollment_all - lag(total_enrollment_all)) / lag(total_enrollment_all),
+    black_males_relative_change = 
+      (black_males - lag(black_males)) / lag(black_males),
+    black_females_relative_change = 
+      (black_females - lag(black_females)) / lag(black_females),
+  ) %>%
+  select(year, ends_with("_relative_change")) %>%
+  pivot_longer(
+    cols = ends_with("_relative_change"), names_to = "gender", 
+    values_to = "relative_change"
+    ) %>%
+  drop_na() %>%
+  mutate(
+    color = case_when(
+      gender == 'total_relative_change' ~ "#9b938c",
+      gender == 'black_males_relative_change' ~ "#4d33a2",
+      gender == 'black_females_relative_change' ~ "#d97400"
+    )
+  ) %>%
+  glimpse()
+
+gender_rc <- filter(hbcu_black_rc, gender != 'total_relative_change')
+total_rc <- hbcu_black_rc %>%
+  filter(gender == 'total_relative_change') %>%
+  rename(gender_copy = gender)
+
+```
+
+
+# Visualize
+
+Using your processed dataset, create your unique visualization.
+
+```{r Visualize}
+
+ggplot(gender_rc, aes(year, relative_change, color = gender)) +
+  geom_line(total_rc, mapping = aes(year, relative_change, color = color), size = 0.75) +
+  geom_line(aes(color = color), show.legend = TRUE, size = 1) +
+  scale_y_continuous(
+    limits = c(-0.06, 0.12), labels = scales::percent_format(accuracy = 1)
+  ) +
+  scale_color_identity() +
+  facet_grid(~gender) +
+  labs(
+    title = "HBCU Enrollment Could Be in Trouble",
+    subtitle = "Relative change of enrollments \nFemales | Males | Overall",
+    y = NULL,
+    x = NULL,
+    caption = "Source: data.word: HBCU - Fall Enrollment 1976 - 2015"
+  ) +
+  cowplot::theme_minimal_hgrid() +
+  theme(
+    strip.text = element_blank()
+  )
+  
+```
+
+# Save Image
+
+Save your image for sharing. Be sure to use the `#TidyTuesday` hashtag in your post on twitter! 
+
+```{r}
+
+# This will save your most recent plot
+ggsave(
+  filename = "My TidyTuesday Plot.png",
+  device = "png")
+
+```
