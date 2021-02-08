@@ -68,6 +68,9 @@ hbcu_total_enrollment <- tt$hbcu_all %>%
   select(Year, `Total enrollment`) %>%
   rename(year = Year, total_enrollment_all = `Total enrollment`)
 
+#hbcu_total_enrollment %>%
+  #filter(year == min(year) | year == max(year))
+
 hbcu_black_rc <- tt$hbcu_black %>%
   select(Year, Males, Females) %>%
   rename(year = Year,  black_males = Males, black_females = Females) %>%
@@ -110,6 +113,7 @@ Using your processed dataset, create your unique visualization.
 ```{r Visualize}
 
 hbcu_plot <- ggplot(gender_rc, aes(year, relative_change, color = gender)) +
+  geom_hline(line_size = 0.5, yintercept = 0, color = "black") +
   geom_line(total_rc, mapping = aes(year, relative_change, color = color), size = 0.75) +
   geom_line(aes(color = color), show.legend = TRUE, size = 1) +
   scale_y_continuous(
@@ -118,13 +122,13 @@ hbcu_plot <- ggplot(gender_rc, aes(year, relative_change, color = gender)) +
   scale_color_identity() +
   facet_grid(~gender) +
   labs(
-    title = "HBCU Enrollment Is Unperdictable",
+    title = "HBCU Enrollment Is Unpredictable",
     subtitle = glue(
-      'The relative change of enrollments for HBCU has been unperdictable for all students, <br>including ', 
-      'black students, between 1976-2015.<br>', 
+      'Since 1976, the enrollment of HBCU has increased 24% but the year-on-year relative change <br>is unpredictable for all students, including ', 
+      'Black students.<br>', 
       '<b style="color:#9b938c">Overall</b> | ',
-      '<b style="color:#d97400">Females</b> | ',
-      '<b style="color:#4d33a2">Males</b>'
+      '<b style="color:#d97400">Black Females </b> | ',
+      '<b style="color:#4d33a2">Black Males</b>'
       ),
     y = NULL,
     x = NULL,
@@ -137,8 +141,11 @@ hbcu_plot <- ggplot(gender_rc, aes(year, relative_change, color = gender)) +
     strip.text = element_blank(),
     plot.caption.position = "plot",
     plot.caption = element_text(hjust = 0)
-  )
+  ) +
+  cowplot::panel_border()
+
   
+hbcu_plot
 ```
 
 # Save Image
@@ -146,7 +153,6 @@ hbcu_plot <- ggplot(gender_rc, aes(year, relative_change, color = gender)) +
 Save your image for sharing. Be sure to use the `#TidyTuesday` hashtag in your post on twitter! 
 
 ```{r}
-cowplot::save_plot("2020-06.png")
 # This will save your most recent plot
 ggsave(
   width = 7, height = 4.67,
