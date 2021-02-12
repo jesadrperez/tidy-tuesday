@@ -18,6 +18,8 @@ knitr::opts_chunk$set(echo = TRUE)
 
 library(tidyverse)
 library(tidytuesdayR)
+library(glue)
+library(scales)
 
 ```
 
@@ -61,10 +63,35 @@ Explore the data and process it into a nice format for plotting! Access each dat
 
 ```{r Wrangle}
 
-student_owner <- tt$student_debt %>%
-  full_join(tt$home_owner, by = c('year' = 'year', 'race' = 'race')) %>%
-  full_join(tt$retirement, by = c('year' = 'year', 'race' = 'race')) %>%
-  full_join(tt$race_wealth, by = c('year' = 'year', 'race' = 'race')) %>%
+lifetime <- tt$lifetime_earn %>%
+  mutate(
+    race = if_else(race == "Hispanic any race", "Hispanic", race)
+  ) %>%
+  group_by(race) %>%
+  mutate(
+    race_lifetime_earn = sum(lifetime_earn)
+  ) %>%
+  ungroup() %>%
+  mutate(
+    gender_within_race_share =  lifetime_earn / race_lifetime_earn,
+    race_share = race_lifetime_earn / sum(lifetime_earn),
+    gender = fct_relevel(gender, c("Men", "Women")),
+    race_label = glue('{race} {percent(race_share, 1)}'),
+    race_label = fct_reorder(race_label, race_share, .desc = TRUE),
+    rect_color = case_when(
+      race == "White" & gender == "Women" ~ "#3385d6",
+      race == "Black" & gender == "Women" ~ "#33a590",
+      race == "Hispanic" & gender == "Women" ~ "#ffa033",
+      race == "White" & gender == "Men" ~ "#0057ad",
+      race == "Black" & gender == "Men" ~ "#007963",
+      race == "Hispanic" & gender == "Men" ~ "#d97400"
+      ),
+    rect_label = glue(
+      '{gender} {percent(gender_within_race_share, 1)}\n',
+      '{dollar(lifetime$lifetime_earn, scale = 1/1000)}'
+      ),
+    rect_color = fct_reorder(rect_color, race_share, .desc = TRUE)
+  ) %>%
   glimpse()
 
 ```
@@ -76,10 +103,33 @@ Using your processed dataset, create your unique visualization.
 
 ```{r Visualize}
 
-ggplot(student_owner, aes(home_owner_pct, loan_debt_pct, color = race)) +
-  geom_point() +
-  scale_x_continuous(limits = c(0.25, 1)) +
-  scale_y_continuous(limits = c(0, 0.5))
+ggplot(
+  lifetime, aes(race_label, gender_within_race_share, fill = rect_color, width = race_share * 100)) +
+  geom_col(position = "fill", color = "white") +
+  geom_text(aes(label = rect_label), position = position_stack(vjust = 0.5)) +
+  scale_y_continuous(expand = c(0,0), labels = percent_format(1)) +
+  scale_fill_identity() +
+  facet_grid(~race_label, scales = "free_x", space = "free_x",  switch = "y") +
+  labs(
+    title = "This is the Title",
+    subtitle = "Average lifetime earnings by race and gender in thousand of dollars",
+    y = NULL,
+    x = NULL,
+    caption = 'Source: Urban Institute "Nine Charts about Wealth Inequality in America"'
+  ) +
+  cowplot::theme_minimal_hgrid() +
+  theme(
+    plot.title.position = "plot",
+    plot.caption.position = "plot",
+    plot.caption = element_text(hjust = 0),
+    axis.text.x  = element_blank(),
+    axis.ticks.x = element_blank(),
+    panel.spacing = unit(0.15, "lines"),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    panel.background = element_blank(),
+    strip.background = element_blank()
+    )
   
 ```
 
