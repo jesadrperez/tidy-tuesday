@@ -82,15 +82,15 @@ lifetime <- tt$lifetime_earn %>%
       race == "White" & gender == "Women" ~ "#3385d6",
       race == "Black" & gender == "Women" ~ "#33a590",
       race == "Hispanic" & gender == "Women" ~ "#ffa033",
-      race == "White" & gender == "Men" ~ "#0057ad",
-      race == "Black" & gender == "Men" ~ "#007963",
-      race == "Hispanic" & gender == "Men" ~ "#d97400"
+      race == "White" & gender == "Men" ~ "#99c2eb",
+      race == "Black" & gender == "Men" ~ "#99d2c7",
+      race == "Hispanic" & gender == "Men" ~ "#ffcf99"
       ),
     rect_label = glue(
-      '{gender} {percent(gender_within_race_share, 1)}\n',
-      '{dollar(lifetime$lifetime_earn, scale = 1/1000)}'
+      '{gender} {dollar(lifetime_earn, scale = 1/1000000)}\n',
+      '{percent(gender_within_race_share, 1)}'
       ),
-    rect_color = fct_reorder(rect_color, race_share, .desc = TRUE)
+    rect_color = fct_reorder(rect_color, race_share, .desc = FALSE)
   ) %>%
   glimpse()
 
@@ -106,18 +106,21 @@ Using your processed dataset, create your unique visualization.
 ggplot(
   lifetime, aes(race_label, gender_within_race_share, fill = rect_color, width = race_share * 100)) +
   geom_col(position = "fill", color = "white") +
-  geom_text(aes(label = rect_label), position = position_stack(vjust = 0.5)) +
+  geom_text(
+    aes(label = rect_label), position = position_stack(vjust = 0.5), 
+    family = "Open Sans"
+  ) +
   scale_y_continuous(expand = c(0,0), labels = percent_format(1)) +
   scale_fill_identity() +
   facet_grid(~race_label, scales = "free_x", space = "free_x",  switch = "y") +
   labs(
-    title = "This is the Title",
-    subtitle = "Average lifetime earnings by race and gender in thousand of dollars",
+    title = "Black Women Have the Best of the Worst",
+    subtitle = str_wrap("On average all women earn less in their lifetimes than their male counterparts, but Black women have the smallest gap (41%). Number in each rectangle is the average lifetime earnings for that race and gender in millions of US dollars and their share of the race's earnings. Number on top, is the race's share of total lifetime earnings, also represented by the width of the stacked bar.", 112),
     y = NULL,
     x = NULL,
-    caption = 'Source: Urban Institute "Nine Charts about Wealth Inequality in America"'
+    caption = '\nSource: Urban Institute "Nine Charts about Wealth Inequality in America"'
   ) +
-  cowplot::theme_minimal_hgrid() +
+  cowplot::theme_minimal_hgrid(font_family = "Open Sans") +
   theme(
     plot.title.position = "plot",
     plot.caption.position = "plot",
@@ -141,6 +144,8 @@ Save your image for sharing. Be sure to use the `#TidyTuesday` hashtag in your p
 
 # This will save your most recent plot
 ggsave(
+  height = 6,
+  width = 9,
   filename = "My TidyTuesday Plot.png",
   device = "png")
 
