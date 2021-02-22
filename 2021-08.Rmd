@@ -18,6 +18,14 @@ knitr::opts_chunk$set(echo = TRUE)
 
 library(tidyverse)
 library(tidytuesdayR)
+library(waffle)
+library(ggtext)
+library(glue)
+library(showtext)
+
+
+font_add_google("Oswald", "Oswald")
+showtext_auto()
 
 ```
 
@@ -61,7 +69,11 @@ Explore the data and process it into a nice format for plotting! Access each dat
 
 ```{r Wrangle}
 
-
+enslaved_df <- tt$census %>% 
+  filter(region == "USA Total") %>% 
+  select(year, black_free, black_slaves) %>%
+  pivot_longer(cols = starts_with("black_"), names_to = "type", values_to = "count") %>%
+  glimpse()
 
 ```
 
@@ -72,7 +84,38 @@ Using your processed dataset, create your unique visualization.
 
 ```{r Visualize}
 
-
+ggplot(enslaved_df, aes(values = count/10000, fill = type)) +
+  geom_waffle(color = "#d2b48c", size = .5, n_rows = 10, flip = TRUE, show.legend = FALSE) +
+  facet_wrap(~year, nrow = 1, strip.position = "bottom") +
+  scale_fill_manual(
+    name = NULL, 
+    values = c("#00aa00", "#000000"), 
+    labels = c("Enslaved", "Freed")
+  ) +
+  scale_y_discrete(expand = c(0,0)) +
+  coord_equal() +
+  labs(
+    title = "Proportion of Freed and Enslaved Persons Among Blacks in the USA",
+    subtitle = glue(
+      "Each Square Represents 10,000 Person That Are ",
+      '<b style="color:#000000">Freed</b> or ',
+      '<b style="color:#00aa00">Enslaved</b>.'
+    ),
+    fill = "Each Square Represents 1000 Persons",
+    caption = "#DuBoisChallenge"
+  ) +
+  theme_enhance_waffle() +
+  theme(
+    text = element_text(family = "Oswald", size = 12),
+    plot.title = element_text(face = "bold"),
+    plot.subtitle = ggtext::element_markdown(),
+    plot.title.position = "panel",
+    legend.position = "top",
+    plot.background = element_rect(fill = "#d2b48c", color = "#d2b48c"),
+    strip.background = element_blank(),
+    axis.ticks = element_blank(),
+    panel.background = element_rect(fill = "#d2b48c", color = "#d2b48c")
+  )
   
 ```
 
@@ -84,6 +127,8 @@ Save your image for sharing. Be sure to use the `#TidyTuesday` hashtag in your p
 
 # This will save your most recent plot
 ggsave(
+  height = 4,
+  width = 6,
   filename = "My TidyTuesday Plot.png",
   device = "png")
 
