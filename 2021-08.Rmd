@@ -97,9 +97,9 @@ ggplot(enslaved_df, aes(values = count/10000, fill = type)) +
   labs(
     title = "Proportion of Freed and Enslaved Persons Among Blacks in the USA",
     subtitle = glue(
-      "Each Square Represents 10,000 Person That Are ",
-      '<b style="color:#000000">Freed</b> or ',
-      '<b style="color:#00aa00">Enslaved</b>.'
+      "Each Square Represents 10,000 Persons That Are ",
+      '<b style="color:#00aa00">Freed</b> or ',
+      '<b style="color:#000000">Enslaved</b>.'
     ),
     fill = "Each Square Represents 1000 Persons",
     caption = "#DuBoisChallenge"
@@ -129,7 +129,7 @@ Save your image for sharing. Be sure to use the `#TidyTuesday` hashtag in your p
 ggsave(
   height = 4,
   width = 6,
-  filename = "My TidyTuesday Plot.png",
-  device = "png")
+  filename = "My TidyTuesday Plot.png"
+  )
 
 ```
