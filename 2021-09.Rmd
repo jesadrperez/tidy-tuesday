@@ -1,0 +1,130 @@
+---
+title: "TidyTemplate"
+date: 2021-02-24
+output: html_output
+---
+
+# TidyTuesday
+
+Join the R4DS Online Learning Community in the weekly #TidyTuesday event!
+Every week we post a raw dataset, a chart or article related to that dataset, and ask you to explore the data.
+While the dataset will be “tamed”, it will not always be tidy! As such you might need to apply various R for Data Science techniques to wrangle the data into a true tidy format.
+The goal of TidyTuesday is to apply your R skills, get feedback, explore other’s work, and connect with the greater #RStats community!
+As such we encourage everyone of all skills to participate!
+
+```{r setup, include=FALSE}
+
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(tidytuesdayR)
+library(glue)
+library(scales)
+
+```
+
+# Load the weekly Data
+
+Dowload the weekly data and make available in the `tt` object.
+
+```{r Load}
+
+tt <- tt_load("2021-02-23")
+
+```
+
+
+# Readme
+
+Take a look at the readme for the weekly data to get insight on the dataset.
+This includes a data dictionary, source, and a link to an article on the data.
+
+```{r Readme, eval = interactive()}
+
+tt
+
+```
+
+
+# Glimpse Data
+
+Take an initial look at the format of the data available.
+
+```{r Glimpse}
+
+tt %>% 
+  map(glimpse)
+
+```
+
+# Wrangle
+
+Explore the data and process it into a nice format for plotting! Access each dataset by name by using a dollarsign after the `tt` object and then the name of the data set.
+
+```{r Wrangle}
+
+earnings <- tt$earn %>%
+  filter(
+    sex == 'Both Sexes',
+    # race %in% c('All Races', 'Black or African American'),
+    # ethnic_origin == "All Origins",
+    age  %in% c("25 to 54 years", "55 to 64 years")
+  ) %>%
+  group_by(race, ethnic_origin, year) %>%
+  summarise(
+    median_year_earn = median(median_weekly_earn) * 52.1429
+  ) %>%
+  ungroup() %>%
+  mutate(
+    race_ethnic = if_else(
+      ethnic_origin == 'Hispanic or Latino', 'Hispanic or Latino', race
+    )
+  ) %>%
+  filter(
+    year == min(year) | year == max(year)
+  ) %>%
+  select(race_ethnic, year, median_year_earn) %>%
+  arrange(race_ethnic, year) %>%
+  mutate(
+    diff = median_year_earn - dplyr::lag(median_year_earn),
+    percent_diff = diff / dplyr::lag(median_year_earn),
+    diff = if_else(year == min(year), NA_real_, diff),
+    percent_diff = if_else(year == min(year), NA_real_, percent_diff),
+    label = glue(
+      '{dollar(earnings$diff, accuracy = 1, scale = 1/1000, suffix = " K")}',
+      ' ({percent(earnings$percent_diff, 1)}) ↑'
+      ),
+    label = if_else(year == min(year), NA_character_, as.character(label))
+  ) %>%
+  glimpse()
+
+```
+
+
+# Visualize
+
+Using your processed dataset, create your unique visualization.
+
+```{r Visualize}
+
+ggplot(earnings, aes(median_year_earn, race_ethnic)) +
+  geom_line() +
+  geom_point(size = 3) +
+  geom_text(aes(label = label, x = median_year_earn - diff/2), nudge_y = 0.15) +
+  scale_x_continuous(
+    position = 'top', labels = dollar_format(scale = 1/1000),  limits = c(25000, 75000))
+  
+```
+
+# Save Image
+
+Save your image for sharing. Be sure to use the `#TidyTuesday` hashtag in your post on twitter! 
+
+```{r}
+
+# This will save your most recent plot
+ggsave(
+  filename = "My TidyTuesday Plot.png",
+  device = "png")
+
+```
