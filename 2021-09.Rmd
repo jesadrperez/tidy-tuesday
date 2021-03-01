@@ -20,6 +20,11 @@ library(tidyverse)
 library(tidytuesdayR)
 library(glue)
 library(scales)
+library(showtext)
+
+font_add_google("Lato", "Lato")
+font_add_google("Merriweather", "Merriweather")
+showtext_auto()
 
 ```
 
@@ -63,12 +68,16 @@ Explore the data and process it into a nice format for plotting! Access each dat
 
 ```{r Wrangle}
 
-earnings <- tt$earn %>%
+DARK_GREEN <- '#3b620a'
+MED_GREEN <- '#6cb312'
+MED_BLUE_GREY <- "#7d8ea0"
+
+earnings_df <- tt$earn %>%
   filter(
     sex == 'Both Sexes',
     # race %in% c('All Races', 'Black or African American'),
     # ethnic_origin == "All Origins",
-    age  %in% c("25 to 54 years", "55 to 64 years")
+    age  %in% c("16 to 24 years", "25 to 54 years", "55 to 64 years")
   ) %>%
   group_by(race, ethnic_origin, year) %>%
   summarise(
@@ -76,8 +85,10 @@ earnings <- tt$earn %>%
   ) %>%
   ungroup() %>%
   mutate(
-    race_ethnic = if_else(
-      ethnic_origin == 'Hispanic or Latino', 'Hispanic or Latino', race
+    race_ethnic = case_when(
+      ethnic_origin == 'Hispanic or Latino' ~ 'Latinx', 
+      race == 'Black or African American' ~ 'Black',
+      TRUE ~ race
     )
   ) %>%
   filter(
@@ -91,10 +102,13 @@ earnings <- tt$earn %>%
     diff = if_else(year == min(year), NA_real_, diff),
     percent_diff = if_else(year == min(year), NA_real_, percent_diff),
     label = glue(
-      '{dollar(earnings$diff, accuracy = 1, scale = 1/1000, suffix = " K")}',
-      ' ({percent(earnings$percent_diff, 1)}) ↑'
+      '+ {dollar(diff, accuracy = 1, scale = 1/1000, suffix = " K")}',
+      ' ({percent(percent_diff, 1)})'
       ),
-    label = if_else(year == min(year), NA_character_, as.character(label))
+    label = if_else(year == min(year), NA_character_, as.character(label)),
+    race_ethnic = fct_relevel(
+      race_ethnic, rev(c('All Races', 'Asian', 'Black', 'Latinx', 'White'))
+      )
   ) %>%
   glimpse()
 
@@ -107,12 +121,47 @@ Using your processed dataset, create your unique visualization.
 
 ```{r Visualize}
 
-ggplot(earnings, aes(median_year_earn, race_ethnic)) +
-  geom_line() +
-  geom_point(size = 3) +
-  geom_text(aes(label = label, x = median_year_earn - diff/2), nudge_y = 0.15) +
+ggplot(earnings_df, aes(median_year_earn, race_ethnic)) +
+  geom_line(color = MED_BLUE_GREY) +
+  geom_point(
+    aes(fill = as.factor(year)), size = 3, shape = 21, color = "white", 
+    show.legend = FALSE
+  ) +
+  geom_text(
+    aes(label = label, x = median_year_earn - diff/2), nudge_y = 0.2, 
+    family = "Merriweather"
+    ) +
   scale_x_continuous(
-    position = 'top', labels = dollar_format(scale = 1/1000),  limits = c(25000, 75000))
+    position = 'top', labels = dollar_format(scale = 1/1000)
+    ) +
+  scale_fill_manual(values = c(MED_GREEN, DARK_GREEN)) +
+  labs(
+    title = "Black & Latinx Americans Are 10-years Behind in Income",
+    subtitle = glue(
+      "Between <b style='color:#6cb312'>2010</b> and",
+      " <b style='color:#3b620a'>2020</b>,",
+      " the median yearly earnings (in current dollars) for all working age",
+      " (16-64 years of age) Americans increased 33%. Yet, in 2020 Black and",
+      " Latinx Americans are earning less than what All Races made in 2010."
+    ),
+    x = "Median Yearly Earnings (in Thousands of Dollars)",
+    y = NULL,
+    caption = "Source: U.S. Burea OF Labor Statictics, Current Population Survey (CPS)"
+  ) +
+  theme_minimal() +
+  theme(
+    text = element_text(family = "Merriweather", color = "black"),
+    plot.title = element_text(family = "Lato", face = "bold", size = rel(1.5)),
+    plot.subtitle = ggtext::element_textbox_simple(size = rel(1.25), margin = margin(0, 0, 5.5, 0)),
+    axis.title = element_text(hjust = 0, size = rel(0.875)),
+    axis.text = element_text(size = rel(1), color = "black"),
+    plot.title.position = "plot",
+    plot.caption = element_text(hjust = 0, size = rel(0.875)),
+    plot.caption.position = "plot",
+    panel.grid.major.y = element_blank(),
+    panel.grid.minor.x = element_blank(),
+    plot.background = element_rect(fill = '#f5f5f5', color = '#f5f5f5')
+  )
   
 ```
 
@@ -124,6 +173,8 @@ Save your image for sharing. Be sure to use the `#TidyTuesday` hashtag in your p
 
 # This will save your most recent plot
 ggsave(
+  width = 8,
+  height = 4.5,
   filename = "My TidyTuesday Plot.png",
   device = "png")
 
