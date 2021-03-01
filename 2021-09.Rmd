@@ -122,13 +122,13 @@ Using your processed dataset, create your unique visualization.
 ```{r Visualize}
 
 ggplot(earnings_df, aes(median_year_earn, race_ethnic)) +
-  geom_line(color = MED_BLUE_GREY) +
+  geom_line(color = MED_BLUE_GREY, size = 3) +
   geom_point(
     aes(fill = as.factor(year)), size = 3, shape = 21, color = "white", 
     show.legend = FALSE
   ) +
   geom_text(
-    aes(label = label, x = median_year_earn - diff/2), nudge_y = 0.2, 
+    aes(label = label, x = median_year_earn - diff/2), nudge_y = 0.275, 
     family = "Merriweather"
     ) +
   scale_x_continuous(
@@ -146,7 +146,7 @@ ggplot(earnings_df, aes(median_year_earn, race_ethnic)) +
     ),
     x = "Median Yearly Earnings (in Thousands of Dollars)",
     y = NULL,
-    caption = "Source: U.S. Burea OF Labor Statictics, Current Population Survey (CPS)"
+    caption = "Source: U.S. Burea Of Labor Statictics, Current Population Survey (CPS)"
   ) +
   theme_minimal() +
   theme(
