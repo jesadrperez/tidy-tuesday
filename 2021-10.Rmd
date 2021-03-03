@@ -1,0 +1,155 @@
+---
+title: "TidyTemplate"
+date: 2021-03-02
+output: html_output
+---
+
+# TidyTuesday
+
+Join the R4DS Online Learning Community in the weekly #TidyTuesday event!
+Every week we post a raw dataset, a chart or article related to that dataset, and ask you to explore the data.
+While the dataset will be “tamed”, it will not always be tidy! As such you might need to apply various R for Data Science techniques to wrangle the data into a true tidy format.
+The goal of TidyTuesday is to apply your R skills, get feedback, explore other’s work, and connect with the greater #RStats community!
+As such we encourage everyone of all skills to participate!
+
+```{r setup, include=FALSE}
+
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(tidytuesdayR)
+library(glue)
+library(cowplot)
+library(ggtext)
+library(showtext)
+
+font_add_google("Lato", "Lato")
+font_add_google("Merriweather", "Merriweather")
+showtext_auto()
+
+```
+
+# Load the weekly Data
+
+Dowload the weekly data and make available in the `tt` object.
+
+```{r Load}
+
+tt <- tt_load("2021-03-02")
+
+```
+
+
+# Readme
+
+Take a look at the readme for the weekly data to get insight on the dataset.
+This includes a data dictionary, source, and a link to an article on the data.
+
+```{r Readme, eval = interactive()}
+
+tt
+
+```
+
+
+# Glimpse Data
+
+Take an initial look at the format of the data available.
+
+```{r Glimpse}
+
+tt %>% 
+  map(glimpse)
+
+```
+
+# Wrangle
+
+Explore the data and process it into a nice format for plotting! Access each dataset by name by using a dollarsign after the `tt` object and then the name of the data set.
+
+```{r Wrangle}
+
+youtube_df <- tt$youtube %>%
+  distinct(id, superbowl_ads_dot_com_url, .keep_all = TRUE) %>%
+  mutate(
+    ad_id = row_number(),
+    across(
+      c(funny, show_product_quickly, patriotic, celebrity, danger, animals, use_sex), 
+      as.integer
+    )
+  ) %>%
+  select(
+    year, ad_id, funny, show_product_quickly, patriotic, celebrity, danger, animals, use_sex
+  ) %>%
+  pivot_longer(
+    c(funny, show_product_quickly, patriotic, celebrity, danger, animals, use_sex),
+    names_to = "characteristic", values_to = "present"
+  ) %>%
+  group_by(year) %>%
+  mutate(n_ads = n_distinct(ad_id)) %>%
+  group_by(n_ads, year, characteristic) %>%
+  summarise(sum_char = sum(present)) %>%
+  ungroup() %>%
+  mutate(
+    percent_usage = sum_char/ n_ads,
+    characteristic = str_replace_all(characteristic, "_", " "),
+    characteristic = str_to_title(characteristic),
+    characteristic = fct_rev(as_factor(characteristic))
+  )
+
+```
+
+
+# Visualize
+
+Using your processed dataset, create your unique visualization.
+
+```{r Visualize}
+
+ggplot(youtube_df, aes(year, characteristic, fill = percent_usage)) +
+  geom_tile(color = "#f3f2f1", size = 1) +
+  scale_fill_distiller(
+    direction = 1, palette = "Greens", labels = percent_format()
+  ) +
+  scale_x_continuous(expand = c(0,0), position = "top") +
+  labs(
+    title = "Sex No Longer Sells",
+    subtitle = str_flatten(sentences[2:6], collapse = " "),
+    fill = "Yearly Usage:",
+    caption = "Source: @FiveThirtyEight",
+    x = NULL, y = NULL
+  ) +
+  theme_minimal() +
+  theme(
+    text = element_text(family = "Merriweather", color = "black"),
+    plot.title = element_text(family = "Lato", face = "bold", size = rel(1.5)),
+    plot.title.position = "plot",
+    plot.subtitle = element_textbox_simple(size = rel(1.25), margin = margin(0, 0, 5.5, 0)),
+    plot.background = element_rect(fill = '#f3f2f1', color = '#f3f2f1'),
+    plot.caption = element_text(hjust = 0, size = rel(0.875)),
+    plot.caption.position = "plot",
+    legend.position = "top",
+    legend.title = element_text(vjust = 0.75, size = rel(1)),
+    legend.text = element_text(size = rel(0.875)),
+    legend.text.align = 0.5,
+    axis.title = element_text(hjust = 0, size = rel(0.875)),
+    axis.text = element_text(size = rel(1), color = "black"),
+    panel.grid = element_blank()
+  )
+  
+```
+
+# Save Image
+
+Save your image for sharing. Be sure to use the `#TidyTuesday` hashtag in your post on twitter! 
+
+```{r}
+
+# This will save your most recent plot
+ggsave(
+  width = 8,
+  height = 4.5,
+  filename = "My TidyTuesday Plot.png",
+  device = "png")
+
+```
