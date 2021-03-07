@@ -25,6 +25,10 @@ These are the packages I find very useful in developing my charts:
 
 Two fonts families are predominately used: `Lato` and `Merriweather`. `Lato`is a san-serif font that is in the title and `Merriweather` is a serif font used in all other typography. Both are Google fonts. The textual chart components are sized based on their importance and to not distract from the data-encoding objects in the charts.
 
+### Alignment
+
+The title, subtitle, legend, and caption (source and notes) are left aligned. Furthermore, all text should horizontal. For the y-axis' title, it should not be used and the axis will be descirbed in the subtitle.
+
 My font style can be applied with:
 ```r
 library(showtext)
@@ -52,6 +56,10 @@ theme(
 ## Submissions
 
 ### January
+
+#### Week 4
+
+![Avocados From Kenya](/plots/2021-04.png)
 
 ### February
 

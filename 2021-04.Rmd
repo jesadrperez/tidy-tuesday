@@ -20,6 +20,11 @@ library(tidyverse)
 library(tidytuesdayR)
 library(ggtext)
 library(glue)
+library(showtext)
+
+font_add_google("Lato", "Lato")
+font_add_google("Merriweather", "Merriweather")
+showtext_auto()
 
 ```
 
@@ -115,7 +120,8 @@ ggplot(
   annotate(
     "text", y = 35, x = 0.03 + filter(
       crop_farmland_df, sub_county == "Kenya", ratio_type == "avocado_ratio"
-    )$ratio, label = "National Share", color = KENYA_RED
+    )$ratio, label = "National Share", color = KENYA_RED, 
+    family = "Merriweather"
   ) +
   labs(
     title = glue(
@@ -131,12 +137,28 @@ ggplot(
     caption = "Source: 2019 Kenya Population and Housing Census"
   ) +
   theme_minimal() +
-  #huitzilin::theme_snl(axis_line = "Y", grid_major = "None") +
+  # #huitzilin::theme_snl(axis_line = "Y", grid_major = "None") +
+  # theme(
+  #   plot.title = ggtext::element_markdown(), 
+  #   plot.subtitle = ggtext::element_markdown(),
+  #   plot.title.position = "plot",
+  #   plot.caption.position = "plot",
+  #   panel.grid = element_blank()
+  # ) 
   theme(
-    plot.title = ggtext::element_markdown(), 
-    plot.subtitle = ggtext::element_markdown(),
+    text = element_text(family = "Merriweather", size = 12),
+    plot.title = element_markdown(family = "Lato", size = rel(2)),
     plot.title.position = "plot",
+    plot.subtitle = element_markdown(size = rel(1.25)),
+    legend.text = element_text(size = rel(0.875)),
+    legend.position = "top",
+    legend.justification = c(0, 1),
+    axis.text = element_text(size = rel(0.875)),
+    axis.title.x = element_text(hjust = 0),
+    axis.title.y = element_text(angle = 0),
     plot.caption.position = "plot",
+    plot.caption = element_text(hjust = 0),
+    # panel 
     panel.grid = element_blank()
   )
   
@@ -149,9 +171,6 @@ Save your image for sharing. Be sure to use the `#TidyTuesday` hashtag in your p
 ```{r}
 
 # This will save your most recent plot
-ggsave(
-  width = 10.5, height = 7,
-  filename = "2021-04.png",
-  device = "png")
+ggsave(filename = "plots/2021-04.png")
 
 ```
