@@ -41,7 +41,7 @@ theme(
     axis.text = element_text(size = rel(0.875)),
     legend.text = element_text(size = rel(0.875)),
   )
-``  
+```  
 
 > The default font size is 12 points, which is ideal for charts smaller than 5 inches wide. For wider fonts, up to 8 inches, use 14 points.
 
