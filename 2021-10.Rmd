@@ -22,6 +22,7 @@ library(glue)
 library(cowplot)
 library(ggtext)
 library(showtext)
+library(scales)
 
 font_add_google("Lato", "Lato")
 font_add_google("Merriweather", "Merriweather")
@@ -31,7 +32,7 @@ showtext_auto()
 
 # Load the weekly Data
 
-Dowload the weekly data and make available in the `tt` object.
+Download the weekly data and make available in the `tt` object.
 
 ```{r Load}
 
@@ -94,6 +95,15 @@ youtube_df <- tt$youtube %>%
     percent_usage = sum_char/ n_ads,
     characteristic = str_replace_all(characteristic, "_", " "),
     characteristic = str_to_title(characteristic),
+    characteristic = case_when(
+      characteristic == "Use Sex" ~ "Use Sex",
+      characteristic == "Show Product Quickly" ~ "Show Product\nQuickly",
+      characteristic == "Patriotic" ~ "Are Patriotic",
+      characteristic == "Funny" ~ "Are Funny",
+      characteristic == "Danger" ~ "Use Danger",
+      characteristic == "Celebrity" ~ "Use Celebrities",
+      characteristic == "Animals" ~ "Use Animals"
+    ),
     characteristic = fct_rev(as_factor(characteristic))
   )
 
@@ -109,32 +119,41 @@ Using your processed dataset, create your unique visualization.
 ggplot(youtube_df, aes(year, characteristic, fill = percent_usage)) +
   geom_tile(color = "#f3f2f1", size = 1) +
   scale_fill_distiller(
-    direction = 1, palette = "Greens", labels = percent_format()
+    direction = 1, palette = "Greens", labels = number_format(scale = 100)
   ) +
   scale_x_continuous(expand = c(0,0), position = "top") +
   labs(
-    title = "Sex No Longer Sells",
-    subtitle = str_flatten(sentences[2:6], collapse = " "),
-    fill = "Yearly Usage:",
+    title = "Sex No Longer Sells During The Super Bowl",
+    subtitle = str_wrap(
+      "Advertising methods of Super Bowl commericals between 2000 and 2020", 65),
+    fill = "% of Commericals That Use Advertising Method in Year:",
     caption = "Source: @FiveThirtyEight",
     x = NULL, y = NULL
   ) +
-  theme_minimal() +
   theme(
-    text = element_text(family = "Merriweather", color = "black"),
-    plot.title = element_text(family = "Lato", face = "bold", size = rel(1.5)),
+    # Use 10.6667 for larger plots, 8 for smaller
+    text = element_text(family = "Merriweather", size = 8),
+    plot.title = element_text(family = "Lato", size = rel(2.5), face = "bold"),
+    plot.subtitle = element_text(size = rel(2)),
+    axis.title = element_text(size = rel(1.5), hjust = 0),
+    axis.title.y = element_text(angle = 0),
+    legend.title = element_text(size = rel(1.5), vjust = 0.75),
+    plot.caption = element_text(size = rel(1), hjust = 0),
+    axis.text = element_text(size = rel(1.25)),
+    legend.text = element_text(size = rel(1.25)),
+    
     plot.title.position = "plot",
-    plot.subtitle = element_textbox_simple(size = rel(1.25), margin = margin(0, 0, 5.5, 0)),
-    plot.background = element_rect(fill = '#f3f2f1', color = '#f3f2f1'),
-    plot.caption = element_text(hjust = 0, size = rel(0.875)),
     plot.caption.position = "plot",
+  
     legend.position = "top",
-    legend.title = element_text(vjust = 0.75, size = rel(1)),
-    legend.text = element_text(size = rel(0.875)),
-    legend.text.align = 0.5,
-    axis.title = element_text(hjust = 0, size = rel(0.875)),
-    axis.text = element_text(size = rel(1), color = "black"),
-    panel.grid = element_blank()
+    legend.justification = c(-1.5, 0),
+    
+    axis.ticks = element_blank(),
+    panel.grid = element_blank(),
+    
+    rect = element_blank(),
+    plot.background = element_rect(fill = '#f3f2f1', color = '#f3f2f1'),
+    legend.background = element_rect(fill = '#f3f2f1', color = '#f3f2f1') 
   )
   
 ```
@@ -149,7 +168,7 @@ Save your image for sharing. Be sure to use the `#TidyTuesday` hashtag in your p
 ggsave(
   width = 8,
   height = 4.5,
-  filename = "My TidyTuesday Plot.png",
+  filename = "plots/2021-10.png",
   device = "png")
 
 ```
