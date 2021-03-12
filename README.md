@@ -70,3 +70,7 @@ theme(
 #### Week 10
 
 ![Sex No Longer Sells](/plots/2021-10.png)
+
+#### Week 11
+
+![Bechdel Test](/plots/2021-11.png)
