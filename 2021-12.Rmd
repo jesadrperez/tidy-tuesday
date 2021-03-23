@@ -1,0 +1,169 @@
+---
+title: "TidyTemplate"
+date: 2021-03-16
+output: html_output
+---
+
+# TidyTuesday
+
+Join the R4DS Online Learning Community in the weekly #TidyTuesday event!
+Every week we post a raw dataset, a chart or article related to that dataset, and ask you to explore the data.
+While the dataset will be “tamed”, it will not always be tidy! As such you might need to apply various R for Data Science techniques to wrangle the data into a true tidy format.
+The goal of TidyTuesday is to apply your R skills, get feedback, explore other’s work, and connect with the greater #RStats community!
+As such we encourage everyone of all skills to participate!
+
+```{r setup, include=FALSE}
+
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(tidytuesdayR)
+library(showtext)
+library(ggtext)
+library(lubridate)
+library(glue)
+
+font_add_google("Lato", "Lato")
+font_add_google("Merriweather", "Merriweather")
+showtext_auto()
+
+```
+
+# Load the weekly Data
+
+Dowload the weekly data and make available in the `tt` object.
+
+```{r Load}
+
+tt <- tt_load("2021-03-16")
+
+```
+
+
+# Readme
+
+Take a look at the readme for the weekly data to get insight on the dataset.
+This includes a data dictionary, source, and a link to an article on the data.
+
+```{r Readme, eval = interactive()}
+
+tt
+
+```
+
+
+# Glimpse Data
+
+Take an initial look at the format of the data available.
+
+```{r Glimpse}
+
+tt %>% 
+  map(glimpse)
+
+```
+
+# Wrangle
+
+Explore the data and process it into a nice format for plotting! Access each dataset by name by using a dollarsign after the `tt` object and then the name of the data set.
+
+```{r Wrangle}
+
+games <- tt$games
+
+games_df <- games %>%
+  group_by(year, month) %>%
+  summarise(
+    mean_avg = mean(avg),
+    mean_peak = mean(peak),
+    .groups = 'drop'
+  ) %>%
+  ungroup() %>%
+  mutate(
+    month_num = match(month, month.name),
+    year_month = glue('{year}-{month_num}'),
+    ymd = ymd(year_month, truncated = 1),
+    pandemic = if_else(ymd > "2020-02-01", 1, 0),
+    highlight = case_when(
+      ymd == "2018-01-01" ~ 1,
+      ymd == "2020-04-01" ~ 1,
+      TRUE ~ 0
+    ),
+    label = case_when(
+      ymd == "2018-01-01" ~ str_wrap(
+        "August 2018: PlayerUnknown's Battlegrounds and other Battle Royal games cause the largest peak in online gaming", 30),
+      ymd == "2020-04-01" ~ str_wrap("April 2020: Global stay-at-home orders causes the second largest peak in online gaming", 30),
+      TRUE ~ NA_character_
+    )
+    # fct_year = fct_inseq(as.character(year)),
+    # fct_month = fct_relevel(month, month.name)
+  ) %>%
+  filter(between(year, 2016, 2021))
+
+```
+
+
+# Visualize
+
+Using your processed dataset, create your unique visualization.
+
+```{r Visualize}
+
+PANDEMIC_RED <- "#cc0000"
+NORMAL_GREY <- "#82786f"
+
+ggplot(games_df, aes(ymd, mean_peak)) +
+  geom_line(size = 1.5,  color = NORMAL_GREY) +
+  geom_line(data = filter(games_df, pandemic == 1), color = PANDEMIC_RED, size = 1.5) +
+  geom_point(
+    data =  filter(games_df, highlight == 1), 
+    aes(ymd, mean_peak, fill = as.factor(pandemic)), shape = 21, 
+    color = "white", stroke = 0.75, size = 2, show.legend = FALSE
+  ) +
+  geom_text(
+    aes(label = label), hjust = "right", vjust = "top", nudge_x = -10,
+    family = "Merriweather", check_overlap = TRUE
+  ) +
+  scale_fill_manual(values = c(NORMAL_GREY, PANDEMIC_RED)) +
+  labs(
+    title = glue("Online Gaming During the <span style = 'color:{PANDEMIC_RED};'>Pandemic</span>"),
+    subtitle = "Average peak gaming between 2016 to 2021",
+    x = NULL, y = NULL,
+    caption = "Source: @SteamCharts"
+  ) +
+   theme(
+    text = element_text(family = "Merriweather", size = 8, color = "black"),
+    plot.title = element_markdown(family = "Lato", size = rel(2.5), face = "bold"),
+    plot.subtitle = element_text(size = rel(2)),
+    plot.caption = element_text(size = rel(1), hjust = 0),
+    axis.text = element_text(size = rel(1.25), color = "black"),
+    
+    plot.title.position = "plot",
+    plot.caption.position = "plot",
+    
+    rect = element_blank(),
+    panel.grid = element_line(color = "#b4aea9"),
+    panel.grid.minor = element_blank(),
+    panel.grid.major.x = element_blank(),
+    axis.ticks = element_blank(),
+
+    plot.background = element_rect(fill = '#f3f2f1', color = '#f3f2f1')
+   )
+  
+```
+
+# Save Image
+
+Save your image for sharing. Be sure to use the `#TidyTuesday` hashtag in your post on twitter! 
+
+```{r}
+
+# This will save your most recent plot
+ggsave(
+  width = 8,
+  height = 4.5,
+  filename = "plots/2021-12.png",
+  device = "png"
+  )
+
+```

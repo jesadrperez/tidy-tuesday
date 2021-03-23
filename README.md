@@ -74,3 +74,7 @@ theme(
 #### Week 11
 
 ![Bechdel Test](/plots/2021-11.png)
+
+#### Week 12
+
+![Online Gaming](/plots/2021-12.png)
