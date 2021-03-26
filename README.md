@@ -23,7 +23,7 @@ These are the packages I find very useful in developing my charts:
 
 ### Font
 
-Two fonts families are predominately used: `Lato` and `Merriweather`. `Lato`is a san-serif font that is in the title and `Merriweather` is a serif font used in all other typography. Both are Google fonts. The textual chart components are sized based on their importance and to not distract from the data-encoding objects in the charts.
+Two fonts families are predominately used: `Lato` and `Merriweather`. `Lato` is a san-serif font that is in the title and `Merriweather` is a serif font used in all other typography. Both are Google fonts. The textual chart components are sized based on their importance and to not distract from the data-encoding objects in the charts.
 
 ### Alignment
 
