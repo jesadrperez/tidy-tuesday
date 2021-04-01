@@ -121,7 +121,7 @@ ggplot(us_votes, aes(year, percentage)) +
     expand = expansion(add = 0), limits = c(0, 1.01), labels = percent_format() 
     ) +
   labs(
-    title = str_wrap("The US and UN Don't Agree on Nuclear Weapsons and Material", 70),
+    title = str_wrap("The US and UN Don't Agree on Nuclear Weapons and Material", 70),
     subtitle =  str_wrap("Since 1970 the United States has on average voted in opposition to the outcomes of UN General Assembly resolutions on nuclear weapons and nuclear material.", 69),
     x = NULL, y = "% of Votes in Opposition",
     caption = "Source: Harvard Dataverse, United Nations General Assembly Voting Data"
