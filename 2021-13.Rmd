@@ -19,7 +19,12 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(tidytuesdayR)
 library(lubridate)
-library(waffle)
+library(scales)
+library(showtext)
+
+font_add_google("Lato", "Lato")
+font_add_google("Merriweather", "Merriweather")
+showtext_auto()
 
 ```
 
@@ -91,7 +96,15 @@ us_votes <- tt$unvotes %>%
   mutate(
     total_rc = sum(n),
     percentage = n / total_rc
-    )
+    ) %>%
+  filter(
+    issue == "Nuclear weapons and nuclear material",
+    year >= 1970
+    ) %>%
+  ungroup() %>%
+  select(year, us_vote, percentage) %>%
+  complete(year, us_vote, fill = list(percentage = 0)) %>%
+  filter(us_vote == "disagreement")
 
 ```
 
@@ -101,9 +114,40 @@ us_votes <- tt$unvotes %>%
 Using your processed dataset, create your unique visualization.
 
 ```{r Visualize}
-ggplot(us_votes, aes(year, percentage, fill = us_vote)) +
-  geom_col() +
-  facet_wrap(~issue, ncol = 1)
+ggplot(us_votes, aes(year, percentage)) +
+  geom_area() +
+  scale_x_continuous(expand = expansion(add = 0)) +
+  scale_y_continuous(
+    expand = expansion(add = 0), limits = c(0, 1.01), labels = percent_format() 
+    ) +
+  labs(
+    title = str_wrap("The US and UN Don't Agree on Nuclear Weapsons and Material", 70),
+    subtitle =  str_wrap("Since 1970 the United States has on average voted in opposition to the outcomes of UN General Assembly resolutions on nuclear weapons and nuclear material.", 69),
+    x = NULL, y = "% of Votes in Opposition",
+    caption = "Source: Harvard Dataverse, United Nations General Assembly Voting Data"
+  ) +
+  theme(
+    rect = element_blank(),
+    text = element_text(family = "Merriweather", size = 8, color = "black"),
+    
+    plot.title = element_text(family = "Lato", size = rel(2.5), face = "bold"),
+    plot.subtitle = element_text(size = rel(2)),
+    plot.caption = element_text(size = rel(1), hjust = 0),
+    
+    axis.text = element_text(size = rel(1.25), color = "black"),
+    
+    plot.title.position = "plot",
+    plot.caption.position = "plot",
+    
+    axis.line.x = element_line(color = "black"),
+    axis.ticks = element_blank(),
+    panel.grid.major = element_line(color = "black"),
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor.x = element_blank(), 
+    panel.grid.minor.y = element_blank(),
+    
+    plot.background = element_rect(fill = "#ffc200", color = "#ffc200")
+  )
   
 ```
 
@@ -115,7 +159,10 @@ Save your image for sharing. Be sure to use the `#TidyTuesday` hashtag in your p
 
 # This will save your most recent plot
 ggsave(
-  filename = "My TidyTuesday Plot.png",
-  device = "png")
+  width = 8,
+  height = 4.5,
+  filename = "plots/2021-13.png",
+  device = "png"
+  )
 
 ```
