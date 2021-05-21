@@ -91,3 +91,7 @@ theme(
 
 ![Water Access Points](/plots/2021-19.png)
 
+#### Week 20
+
+![Inaccessiblilty broadband](/plots/2021-20.png)
+

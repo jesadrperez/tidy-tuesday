@@ -1,0 +1,145 @@
+---
+title: "TidyTemplate"
+date: 2021-05-12
+output: html_output
+---
+
+# TidyTuesday
+
+Join the R4DS Online Learning Community in the weekly #TidyTuesday event!
+Every week we post a raw dataset, a chart or article related to that dataset, and ask you to explore the data.
+While the dataset will be “tamed”, it will not always be tidy! As such you might need to apply various R for Data Science techniques to wrangle the data into a true tidy format.
+The goal of TidyTuesday is to apply your R skills, get feedback, explore other’s work, and connect with the greater #RStats community!
+As such we encourage everyone of all skills to participate!
+
+```{r setup, include=FALSE}
+
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(tidytuesdayR)
+library(tidyverse)
+library(maps)
+library(glue)
+library(scales)
+library(showtext)
+
+font_add_google("Lato", "Lato")
+font_add_google("Merriweather", "Merriweather")
+showtext_auto()
+
+```
+
+# Load the weekly Data
+
+Dowload the weekly data and make available in the `tt` object.
+
+```{r Load}
+
+tt <- tt_load("2021-05-11")
+
+```
+
+
+# Readme
+
+Take a look at the readme for the weekly data to get insight on the dataset.
+This includes a data dictionary, source, and a link to an article on the data.
+
+```{r Readme, eval = interactive()}
+
+tt
+
+```
+
+
+# Glimpse Data
+
+Take an initial look at the format of the data available.
+
+```{r Glimpse}
+
+tt %>% 
+  map(glimpse)
+
+```
+
+# Wrangle
+
+Explore the data and process it into a nice format for plotting! Access each dataset by name by using a dollarsign after the `tt` object and then the name of the data set.
+
+```{r Wrangle}
+
+states_broadband <- tt$broadband_zip %>%
+  janitor::clean_names() %>% 
+  mutate(broadband_usage = as.double(broadband_usage)) %>% 
+  group_by(st) %>%
+  summarise(state_avg = 1 - mean(broadband_usage, na.rm = TRUE)) %>% 
+  filter(!st %in% c("DC", "HI", "AK")) %>% 
+  arrange(desc(state_avg)) %>%
+  mutate(rank = row_number()) %>%
+  left_join(
+    tibble(state_ab = state.abb, state_name = state.name),
+    by = c('st' = 'state_ab')
+  ) %>%
+  mutate(
+    facet_title = glue("{rank}. {state_name}: {percent(state_avg, accuracy = 1)}"),
+    facet_title = fct_reorder(facet_title, state_avg, .desc = TRUE)
+  )
+
+states_map <- fortify(map_data("state")) %>%
+  select(-subregion, -order) %>%
+  mutate(state_name = str_to_title(region)) %>%
+  inner_join(states_broadband, by = c("state_name" = "state_name"))
+  
+```
+
+
+# Visualize
+
+Using your processed dataset, create your unique visualization.
+
+```{r Visualize, fig.height=4.5, fig.width=8}
+
+ggplot(states_map) +
+  geom_polygon(aes(long*20, lat*20, group=group)) +
+  facet_wrap(~facet_title, scales="free", ncol = 10) + 
+#  facet_grid(. ~ facet_title, scales = "free") +
+  labs(
+    title = "The Ranked States of Inaccessiblilty",
+    subtitle = "Percent of people in state without access to fixed terrestrial broadband at speeds of 25 Mbps/3 Mbps as of the end of 2017",
+    caption = "Source: @Verge - This is a Map of America's broadband Problem"
+  ) +
+  theme(
+    rect = element_blank(),
+    text = element_text(family = "Merriweather", size = 8, color = "black"),
+    plot.title = element_text(family = "Lato", size = rel(2.5), face = "bold"),
+    plot.subtitle = element_text(size = rel(2)),
+    plot.caption = element_text(size = rel(1), hjust = 0),
+    strip.text = element_text(size = rel(0.85), hjust = 0, face = "bold"),  
+    plot.background = element_rect(fill = "#f5f5f5", color = "#f5f5f5"),
+    axis.title = element_blank(),
+    axis.text = element_blank(),
+    axis.ticks = element_blank(),
+    panel.grid = element_blank(),
+    panel.background = element_blank(),
+    aspect.ratio = 1
+    )
+  
+```
+
+# Save Image
+
+Save your image for sharing. Be sure to use the `#TidyTuesday` hashtag in your post on twitter! 
+
+```{r}
+
+# This will save your most recent plot
+ggsave(
+  width = 14,
+  height = 9,
+  filename = "plots/2021-20.png",
+  device = "png"
+)
+
+```
