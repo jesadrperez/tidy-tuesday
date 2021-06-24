@@ -1,0 +1,129 @@
+---
+title: "TidyTemplate"
+date: 2021-05-25
+output: html_output
+---
+
+# TidyTuesday
+
+Join the R4DS Online Learning Community in the weekly #TidyTuesday event!
+Every week we post a raw dataset, a chart or article related to that dataset, and ask you to explore the data.
+While the dataset will be “tamed”, it will not always be tidy! As such you might need to apply various R for Data Science techniques to wrangle the data into a true tidy format.
+The goal of TidyTuesday is to apply your R skills, get feedback, explore other’s work, and connect with the greater #RStats community!
+As such we encourage everyone of all skills to participate!
+
+```{r setup, include=FALSE}
+
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(tidytuesdayR)
+library(showtext)
+
+font_add_google("Lato", "Lato")
+font_add_google("Merriweather", "Merriweather")
+showtext_auto()
+
+```
+
+# Load the weekly Data
+
+Dowload the weekly data and make available in the `tt` object.
+
+```{r Load}
+
+tt <- tt_load("2021-05-25")
+
+```
+
+
+# Readme
+
+Take a look at the readme for the weekly data to get insight on the dataset.
+This includes a data dictionary, source, and a link to an article on the data.
+
+```{r Readme, eval = interactive()}
+
+tt
+
+```
+
+
+# Glimpse Data
+
+Take an initial look at the format of the data available.
+
+```{r Glimpse}
+
+tt %>% 
+  map(glimpse)
+
+```
+
+# Wrangle
+
+Explore the data and process it into a nice format for plotting! Access each dataset by name by using a dollarsign after the `tt` object and then the name of the data set.
+
+```{r Wrangle}
+
+track_records <- tt$records %>% 
+  group_by(track, shortcut, type) %>% 
+  filter(time == min(time), type == "Three Lap") %>% 
+  glimpse()
+
+```
+
+
+# Visualize
+
+Using your processed dataset, create your unique visualization.
+
+```{r Visualize}
+
+N64_BLUE <- rgb(0, 3, 149, maxColorValue = 255)
+N64_GREEN <- rgb(24, 153, 29, maxColorValue = 255)
+N64_YELLOW <- rgb(251, 178, 46, maxColorValue = 255)
+
+
+ggplot(track_records, aes(time, fct_rev(track))) +
+  geom_line(size = 3, color = N64_YELLOW) +
+  geom_point(
+    aes(fill = shortcut), size = 3, shape = 21, color = "white", stroke = 1,
+    show.legend = FALSE
+  ) +
+  scale_x_continuous(position = "top") +
+  scale_fill_manual(values = c(N64_BLUE, N64_GREEN)) +
+  labs(
+    title = "This is the title",
+    subtitle = "This is a much longer subtitle",
+    y = NULL, x = NULL, 
+    caption = "This is the caption"
+  ) +
+  theme(
+    rect = element_blank(),
+    text = element_text(family = "Merriweather", size = 8, color = "black"),
+    plot.background = element_rect(fill = "#f5f5f5", color = "#f5f5f5"),
+    plot.title = element_text(family = "Lato", size = rel(2.5), face = "bold"),
+    plot.subtitle = element_text(size = rel(2)),
+    plot.caption = element_text(size = rel(1), hjust = 0),
+    plot.title.position = "plot",
+    plot.caption.position = "plot",
+    axis.ticks = element_blank(),
+    panel.grid.minor.x = element_blank(),
+    panel.grid.major.y = element_blank()
+  )
+  
+```
+
+# Save Image
+
+Save your image for sharing. Be sure to use the `#TidyTuesday` hashtag in your post on twitter! 
+
+```{r}
+
+# This will save your most recent plot
+ggsave(
+  filename = "My TidyTuesday Plot.png",
+  device = "png")
+
+```
