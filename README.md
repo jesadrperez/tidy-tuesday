@@ -95,3 +95,8 @@ theme(
 
 ![Inaccessiblilty broadband](/plots/2021-20.png)
 
+### June
+
+#### Week 26
+
+![Park Access](/plots/2021-26.png)
