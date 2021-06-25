@@ -103,7 +103,8 @@ ggplot(parks, aes(year, pct_near_park_data_raw, group = city)) +
   labs(
     title = "Albuquerque's Residents Access to Parks is Increasing",
     subtitle = str_wrap("Percent of residents within a 10-minute walk to a park in the 100 most populated U.S. cities.", 75),
-    x = NULL, y = NULL
+    x = NULL, y = NULL,
+    caption = "Source: The Trust for Public Land ParkScore® Index 2020"
   ) +
   theme(
     rect = element_blank(),
@@ -134,6 +135,5 @@ ggsave(
   filename = "plots/2021-26.png",
   device = "png"
   )
-
 
 ```
