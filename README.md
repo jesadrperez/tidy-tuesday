@@ -100,3 +100,7 @@ theme(
 #### Week 26
 
 ![Park Access](/plots/2021-26.png)
+
+#### Week 27
+
+![London Fire](/plots/2021-27.png)
