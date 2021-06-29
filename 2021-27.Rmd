@@ -1,0 +1,162 @@
+---
+title: "TidyTemplate"
+date: 2021-06-29
+output: html_output
+---
+
+# TidyTuesday
+
+Join the R4DS Online Learning Community in the weekly #TidyTuesday event!
+Every week we post a raw dataset, a chart or article related to that dataset, and ask you to explore the data.
+While the dataset will be “tamed”, it will not always be tidy! As such you might need to apply various R for Data Science techniques to wrangle the data into a true tidy format.
+The goal of TidyTuesday is to apply your R skills, get feedback, explore other’s work, and connect with the greater #RStats community!
+As such we encourage everyone of all skills to participate!
+
+```{r setup, include=FALSE}
+
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(tidytuesdayR)
+library(glue)
+library(showtext)
+library(scales)
+library(ggtext)
+
+font_add_google("Lato", "Lato")
+font_add_google("Merriweather", "Merriweather")
+showtext_auto()
+
+```
+
+# Load the weekly Data
+
+Dowload the weekly data and make available in the `tt` object.
+
+```{r Load}
+
+tt <- tt_load("2021-06-29")
+
+```
+
+
+# Readme
+
+Take a look at the readme for the weekly data to get insight on the dataset.
+This includes a data dictionary, source, and a link to an article on the data.
+
+```{r Readme, eval = interactive()}
+
+tt
+
+```
+
+
+# Glimpse Data
+
+Take an initial look at the format of the data available.
+
+```{r Glimpse}
+
+tt %>% 
+  map(glimpse)
+
+```
+
+# Wrangle
+
+Explore the data and process it into a nice format for plotting! Access each dataset by name by using a dollarsign after the `tt` object and then the name of the data set.
+
+```{r Wrangle}
+
+animal_rescues <- tt$animal_rescues %>%
+  select(
+    incident_number, cal_year, incident_notional_cost, final_description, 
+    animal_group_parent, special_service_type_category, special_service_type
+  ) %>% 
+  mutate(incident_notional_cost = as.numeric(incident_notional_cost)) %>% 
+  drop_na(incident_notional_cost) %>%
+  slice_max(incident_notional_cost, n = 10) %>% 
+  mutate(
+    clean_description = str_replace(final_description, "  ", " "),
+    clean_description = if_else(
+      final_description == "Redacted", special_service_type_category,
+      clean_description
+      ),
+    clean_description = if_else(
+      final_description == "Redacted", 
+      str_replace(clean_description, "Animal", animal_group_parent),
+      clean_description
+    ),
+    clean_description = str_to_title(clean_description),
+    row_number = row_number(),
+    clean_description = glue("{row_number}. {clean_description} ({cal_year})"),
+    clean_description = str_wrap(clean_description, 25),
+    clean_description = fct_reorder(clean_description, row_number, .desc = TRUE),
+    bar_label = dollar(incident_notional_cost, prefix = "£")
+  )
+
+mean_animal_rescues <- tt$animal_rescues %>%
+  mutate(incident_notional_cost = as.numeric(incident_notional_cost)) %>% 
+  drop_na(incident_notional_cost) %>%
+  summarise(incident_notional_cost = mean(incident_notional_cost)) %>%
+  mutate(bar_desc = str_wrap("Average Cost Between 2009 to 2020", 20))
+
+```
+
+
+# Visualize
+
+Using your processed dataset, create your unique visualization.
+
+```{r Visualize}
+UK_BLUE <- "#012169"
+UK_RED <- "#C8102E"
+
+ggplot(animal_rescues, aes(incident_notional_cost, clean_description)) +
+  geom_col(fill = UK_RED) +
+  geom_text(
+    aes(label = bar_label), hjust = "right", nudge_x = -50, color = "white",
+    family = "Lato", fontface = "bold"
+    ) +
+  scale_x_continuous(expand = c(0, 0)) +
+  labs(
+    title = glue(
+      "<span style='color:{UK_RED}'>**God Save The Cat!**</span> Most Expensive London Fire Brigade Animal Rescues"), 
+    subtitle = str_wrap("Since 2009, the London Fire Brigade has responded to 7,544 animal rescue calls to help animals that may be trapped or in distress. The average cost of such incidents is £356, these are the most expensive:", 90),
+    caption = "Source: London Datastore",
+    x = NULL, y = NULL
+  ) +
+  theme(
+    text = element_text(family = "Merriweather", size = 8, color = UK_BLUE),
+    plot.title = element_markdown(family = "Lato", size = rel(2.5)),
+    plot.subtitle = element_text(size = rel(2)),
+    plot.caption = element_text(size = rel(1.25), hjust = 0),
+    plot.title.position = "plot",
+    plot.caption.position = "plot",
+    axis.text.y = element_text(hjust = 0, color = UK_BLUE, size = rel(1.25)),
+    axis.text.x = element_blank(),
+    panel.grid = element_blank(),
+    axis.ticks = element_blank(),
+    panel.background = element_blank()
+  )
+  
+```
+
+# Save Image
+
+Save your image for sharing. Be sure to use the `#TidyTuesday` hashtag in your post on twitter! 
+
+```{r}
+width_inch <- 10
+ratio <- 0.5625
+
+# This will save your most recent plot
+ggsave(
+  width = width_inch,
+  height = width_inch * ratio,
+  filename = "plots/2021-27.png",
+  device = "png"
+  )
+
+```
