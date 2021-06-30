@@ -123,7 +123,7 @@ ggplot(animal_rescues, aes(incident_notional_cost, clean_description)) +
   labs(
     title = glue(
       "<span style='color:{UK_RED}'>**God Save The Cat!**</span> Most Expensive London Fire Brigade Animal Rescues"), 
-    subtitle = str_wrap("Since 2009, the London Fire Brigade has responded to 7,544 calls to help animals that may be trapped or in distress. The average cost of such incidents is £356, these are the most expensive:", 90),
+    subtitle = str_wrap("Since 2009, the London Fire Brigade has responded to 7,544 calls to help animals that may be trapped or in distress. The average cost of such incidents is £356, these are the most expensive:", 89),
     caption = "Source: London Datastore",
     x = NULL, y = NULL
   ) +
